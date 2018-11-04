@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <errno.h>
+#include <unistd.h>
 
 
 void dirinfo(char * path){
@@ -32,17 +33,33 @@ void dirinfo(char * path){
   
   struct dirent *entry = calloc(numfiles + numdir, sizeof(struct dirent *));
   entry = readdir(d);
+  char * arrdir[numdir];
+  char * arrfile[numfiles];
 
+  int dirc = 0;
+  int filec = 0;
   //print names of files + directories
   while (entry != NULL){
-    if (entry->d_type == DT_DIR)
-          printf("Directory: %s\n", entry->d_name);  
-
-    if (entry->d_type == DT_REG)
-          printf("File: %s\n", entry->d_name);
+    if (entry->d_type == DT_DIR){
+	  arrdir[dirc] = entry->d_name;
+	  dirc++;
+    }
+    if (entry->d_type == DT_REG){
+         arrfile[filec] = entry->d_name;
+	 filec++;
+    }
     entry = readdir(d);
 
-  } 
+  }
+  printf("Directories:\n");
+  while (dirc--){
+    printf("\t %s \n", arrdir[dirc]);
+  }
+
+  printf("\nFiles:\n");
+  while (filec--){
+    printf("\t %s \n", arrfile[filec]);
+  }
 
   closedir(d);
 
@@ -51,6 +68,9 @@ void dirinfo(char * path){
 
 
 int main(){
-  dirinfo("/home/bot/Documents/dir");
+  //get cwd is needed
+  char arr[256];
+  char * cwd = getcwd( arr, 100);
+  dirinfo(cwd);
   return 0;
 }
