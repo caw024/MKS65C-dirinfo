@@ -9,27 +9,39 @@
 void dirinfo(char * path){
   DIR *d;
   d = opendir(path);
-  int i = 0;
+  int numfiles = 0;
+  int numdir = 0;
 
   //finding the number of items in directory
-  //HAD SOME HELP FROM STACK OVERFLOW AT THIS PART ONLY
+  //HAD SOME HELP FROM STACK OVERFLOW AT THIS PART ONLY (clarified man pg)
   struct dirent * cpy;
 
   while (cpy = readdir(d)){
-    i += 1;
+    if (cpy->d_type == DT_DIR)
+      numdir += 1;
+    if (cpy->d_type == DT_REG)
+      numfiles += 1;
+    
   }
-  
-  printf("%d\n", i);
-  closedir(d);
+    printf("Total number of files: %d\n", numfiles);
+    printf("Total number of directories: %d\n", numdir);
+    printf("Total number of things: %d\n", numfiles + numdir);
+    closedir(d);
 
   d = opendir(path);
   
-  struct dirent *entry = calloc(i, sizeof(struct dirent *));
+  struct dirent *entry = calloc(numfiles + numdir, sizeof(struct dirent *));
   entry = readdir(d);
 
   //print names of files + directories
-  while ((entry = readdir(d)) != NULL){
-    printf("%s\n", entry->d_name);  
+  while (entry != NULL){
+    if (entry->d_type == DT_DIR)
+          printf("Directory: %s\n", entry->d_name);  
+
+    if (entry->d_type == DT_REG)
+          printf("File: %s\n", entry->d_name);
+    entry = readdir(d);
+
   } 
 
   closedir(d);
