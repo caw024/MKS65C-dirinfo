@@ -83,6 +83,39 @@ char * getFileInfo(char * path) {
   return retStr;
 }
 
+void printTree(char * path, char * pre) {
+  DIR *d;
+  d = opendir(path);
+  struct dirent * cpy;
+  int size = 0;
+  while(cpy = readdir(d)) {
+    if(strncmp(cpy->d_name, ".", 1)) {
+      size += 1;
+    }
+  }
+  closedir(d);
+  d = opendir(path);
+  char prenext[256];
+  char npath[512];
+  strcpy(prenext, pre);
+  strcat(prenext, "|  ");
+  while(size && (cpy = readdir(d))) {
+    if(strncmp(cpy->d_name, ".", 1)) {
+      if(cpy->d_type == DT_DIR) {
+        printf("%s+--%s\n",pre, cpy->d_name);
+        strcpy(npath, path);
+        strcat(npath, "/");
+        strcat(npath, cpy->d_name);
+        printTree(npath, prenext);
+      }
+      if(cpy->d_type == DT_REG) {
+        printf("%s+--%s\n", pre, cpy->d_name);
+      }
+      size--;
+    }
+  }
+}
+
 void dirinfo(char * path){
   DIR *d;
   d = opendir(path);
@@ -160,6 +193,8 @@ void dirinfo(char * path){
     printf("\t%s", tmpInf); 
     printf("\t%s\n", arrfile[filec]);
   }
+  printf("\nDir Tree:\n");
+  printTree(path, "");
 
   closedir(d);
 }
