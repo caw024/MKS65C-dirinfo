@@ -15,7 +15,7 @@ char ** sort_strarr(char ** strarr, int l) {
   char tmp[256];
   while(i < l) {
     j = i;
-    while(j > 0 & strcasecmp(strarr[j-1], strarr[j]) < 0) {
+    while(j && strcasecmp(strarr[j-1], strarr[j]) < 0) {
       strcpy(tmp, strarr[j]);
       strcpy(strarr[j], strarr[j-1]);
       strcpy(strarr[j-1], tmp);
@@ -138,18 +138,22 @@ void dirinfo(char * path){
   printf("Total number of things: %d\n", numfiles + numdirs);
   unsigned long dirBytes = getDirSize(path);
   char ext[16];
+  if(dirBytes <= 1024) {
+    strcpy(ext, "B");
+  }
   if(dirBytes > 1024) {
     strcpy(ext, "KB");
     dirBytes /= 1024;
-  } else if (dirBytes > 1024 * 1024) {
-    strcpy(ext, "MB");
-    dirBytes /= 1024*1024;
-  } else if (dirBytes > 1024 * 1024 * 1024) {
-    strcpy(ext, "GB");
-    dirBytes /= 1024*1024*1024;
-  } else {
-    strcpy(ext, "B");
   }
+  if (dirBytes > 1024) {
+    strcpy(ext, "MB");
+    dirBytes /= 1024;
+  }
+  if (dirBytes > 1024) {
+    strcpy(ext, "GB");
+    dirBytes /= 1024;
+  }
+
   printf("Size of directory: %ld%s\n", dirBytes, ext);
   closedir(d);
 
@@ -201,10 +205,14 @@ void dirinfo(char * path){
 
 
 
-int main(){
+int main(int argc, char * argv[]){
   //get cwd is needed
-  char arr[256];
-  char * cwd = getcwd( arr, 100);
-  dirinfo(cwd);
+  if(argc > 1) {
+    for(int i = 1; i < argc; i++) {
+      dirinfo(argv[i]);
+    }
+  } else {
+    dirinfo(".");
+  }
   return 0;
 }
