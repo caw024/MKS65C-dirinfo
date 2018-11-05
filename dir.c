@@ -5,13 +5,29 @@
 #include <dirent.h>
 #include <errno.h>
 #include <unistd.h>
+#include <string.h>
 
+char ** sort_strarr(char ** strarr, int l) {
+  int i = 1;
+  int j;
+  char tmp[256];
+  while(i < l) {
+    j = i;
+    while(j > 0 & strcasecmp(strarr[j-1], strarr[j]) < 0) {
+      strcpy(tmp, strarr[j]);
+      strcpy(strarr[j], strarr[j-1]);
+      strcpy(strarr[j-1], tmp);
+      j--;
+    }
+    i++;
+  }
+}
 
 void dirinfo(char * path){
   DIR *d;
   d = opendir(path);
   int numfiles = 0;
-  int numdir = 0;
+  int numdirs = 0;
 
   //finding the number of items in directory
   //HAD SOME HELP FROM STACK OVERFLOW AT THIS PART ONLY (clarified man pg)
@@ -19,21 +35,21 @@ void dirinfo(char * path){
 
   while (cpy = readdir(d)){
     if (cpy->d_type == DT_DIR)
-      numdir += 1;
+      numdirs += 1;
     if (cpy->d_type == DT_REG)
       numfiles += 1;
     
   }
-    printf("Total number of files: %d\n", numfiles);
-    printf("Total number of directories: %d\n", numdir);
-    printf("Total number of things: %d\n", numfiles + numdir);
-    closedir(d);
+  printf("Total number of files: %d\n", numfiles);
+  printf("Total number of directories: %d\n", numdirs);
+  printf("Total number of things: %d\n", numfiles + numdirs);
+  closedir(d);
 
   d = opendir(path);
   
-  struct dirent *entry = calloc(numfiles + numdir, sizeof(struct dirent *));
+  struct dirent *entry = calloc(numfiles + numdirs, sizeof(struct dirent *));
   entry = readdir(d);
-  char * arrdir[numdir];
+  char * arrdir[numdirs];
   char * arrfile[numfiles];
 
   int dirc = 0;
@@ -41,16 +57,18 @@ void dirinfo(char * path){
   //print names of files + directories
   while (entry != NULL){
     if (entry->d_type == DT_DIR){
-	  arrdir[dirc] = entry->d_name;
-	  dirc++;
+	    arrdir[dirc] = entry->d_name;
+	    dirc++;
     }
     if (entry->d_type == DT_REG){
-         arrfile[filec] = entry->d_name;
-	 filec++;
+      arrfile[filec] = entry->d_name;
+	    filec++;
     }
     entry = readdir(d);
-
   }
+  sort_strarr(arrdir, numdirs);
+  sort_strarr(arrfile, numfiles);
+
   printf("Directories:\n");
   while (dirc--){
     printf("\t %s \n", arrdir[dirc]);
