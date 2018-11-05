@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <pwd.h>
+#include <grp.h>
 
 char ** sort_strarr(char ** strarr, int l) {
   int i = 1;
@@ -21,6 +23,64 @@ char ** sort_strarr(char ** strarr, int l) {
     }
     i++;
   }
+}
+
+unsigned long getDirSize(char * path){
+  char currP[256];
+  DIR *d;
+  unsigned long size = 0;
+  d = opendir(path);
+  struct stat * statbuf = malloc(sizeof(struct stat));
+  struct dirent * cpy;
+  while(cpy = readdir(d)) {
+    if(strcmp(cpy->d_name, ".") & strcmp(cpy->d_name, "..")) {
+      strcpy(currP, path);
+      strcat(currP, "/");
+      strcat(currP, cpy->d_name);
+      if(cpy->d_type == DT_DIR) {
+        size += getDirSize(currP);
+      }
+      if(cpy->d_type == DT_REG) {
+        stat(currP, statbuf); 
+        size += statbuf->st_size;
+      }
+    }
+  }
+  free(statbuf);
+  return size;
+}
+
+char * getFileInfo(char * path) {
+  char * permStr[8];
+  permStr[0] ="---";
+  permStr[1] ="--x";
+  permStr[2] ="-w-";
+  permStr[3] ="-wx";
+  permStr[4] ="r--";
+  permStr[5] ="r-x";
+  permStr[6] ="rw-";
+  permStr[7] ="rwx";
+  struct stat * statbuf = malloc(sizeof(struct stat));
+  char * retStr = malloc(512);
+  stat(path, statbuf);
+  int i = 2;
+  int mode = statbuf->st_mode;
+  strcpy(retStr, permStr[mode%8]);
+  mode /= 8;
+  while(i--) {
+    strcat(retStr, permStr[mode%8]);
+    mode /= 8;
+  }
+  strcat(retStr, " ");
+  struct passwd *pwd;
+  pwd = getpwuid(statbuf->st_uid);
+  strcat(retStr, pwd->pw_name);
+  strcat(retStr, " ");
+  struct group * grp;
+  grp = getgrgid(statbuf->st_gid);
+  strcat(retStr, grp->gr_name);
+  free(statbuf);
+  return retStr;
 }
 
 void dirinfo(char * path){
@@ -43,6 +103,21 @@ void dirinfo(char * path){
   printf("Total number of files: %d\n", numfiles);
   printf("Total number of directories: %d\n", numdirs);
   printf("Total number of things: %d\n", numfiles + numdirs);
+  unsigned long dirBytes = getDirSize(path);
+  char ext[16];
+  if(dirBytes > 1024) {
+    strcpy(ext, "KB");
+    dirBytes /= 1024;
+  } else if (dirBytes > 1024 * 1024) {
+    strcpy(ext, "MB");
+    dirBytes /= 1024*1024;
+  } else if (dirBytes > 1024 * 1024 * 1024) {
+    strcpy(ext, "GB");
+    dirBytes /= 1024*1024*1024;
+  } else {
+    strcpy(ext, "B");
+  }
+  printf("Size of directory: %ld%s\n", dirBytes, ext);
   closedir(d);
 
   d = opendir(path);
@@ -71,16 +146,22 @@ void dirinfo(char * path){
 
   printf("Directories:\n");
   while (dirc--){
-    printf("\t %s \n", arrdir[dirc]);
+    printf("\t%s\n", arrdir[dirc]);
   }
 
+  char tmpPath[1024];
+  char tmpInf[512];
   printf("\nFiles:\n");
   while (filec--){
-    printf("\t %s \n", arrfile[filec]);
+    strcpy(tmpPath, path);
+    strcat(tmpPath, "/");
+    strcat(tmpPath, arrfile[filec]);
+    strcpy(tmpInf, getFileInfo(tmpPath));
+    printf("\t%s", tmpInf); 
+    printf("\t%s\n", arrfile[filec]);
   }
 
   closedir(d);
-
 }
 
 

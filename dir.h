@@ -4,7 +4,6 @@
  *******************************/
 #include <sys/types.h>
 
-
 void listDir(const char * path);
 
 unsigned char isDir(struct dirent * de);
