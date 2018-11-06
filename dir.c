@@ -8,6 +8,7 @@
 #include <string.h>
 #include <pwd.h>
 #include <grp.h>
+#include <string.h>
 
 char ** sort_strarr(char ** strarr, int l) {
   int i = 1;
@@ -119,100 +120,109 @@ void printTree(char * path, char * pre) {
 void dirinfo(char * path){
   DIR *d;
   d = opendir(path);
-  int numfiles = 0;
-  int numdirs = 0;
+  if (d == NULL){
+    printf("Something went wrong: %s\n", strerror(errno));
+  }
+  else{
+    int numfiles = 0;
+    int numdirs = 0;
 
-  //finding the number of items in directory
-  //HAD SOME HELP FROM STACK OVERFLOW AT THIS PART ONLY (clarified man pg)
-  struct dirent * cpy;
+    //finding the number of items in directory
+    //HAD SOME HELP FROM STACK OVERFLOW AT THIS PART ONLY (clarified man pg)
+    struct dirent * cpy;
 
-  while (cpy = readdir(d)){
-    if (cpy->d_type == DT_DIR)
-      numdirs += 1;
-    if (cpy->d_type == DT_REG)
-      numfiles += 1;
+    while (cpy = readdir(d)){
+      if (cpy->d_type == DT_DIR)
+	numdirs += 1;
+      if (cpy->d_type == DT_REG)
+	numfiles += 1;
     
-  }
-  printf("Total number of files: %d\n", numfiles);
-  printf("Total number of directories: %d\n", numdirs);
-  printf("Total number of things: %d\n", numfiles + numdirs);
-  unsigned long dirBytes = getDirSize(path);
-  char ext[16];
-  if(dirBytes <= 1024) {
-    strcpy(ext, "B");
-  }
-  if(dirBytes > 1024) {
-    strcpy(ext, "KB");
-    dirBytes /= 1024;
-  }
-  if (dirBytes > 1024) {
-    strcpy(ext, "MB");
-    dirBytes /= 1024;
-  }
-  if (dirBytes > 1024) {
-    strcpy(ext, "GB");
-    dirBytes /= 1024;
-  }
+    }
+    printf("Total number of files: %d\n", numfiles);
+    printf("Total number of directories: %d\n", numdirs);
+    printf("Total number of things: %d\n", numfiles + numdirs);
+    unsigned long dirBytes = getDirSize(path);
+    char ext[16];
+    if(dirBytes <= 1024) {
+      strcpy(ext, "B");
+    }
+    if(dirBytes > 1024) {
+      strcpy(ext, "KB");
+      dirBytes /= 1024;
+    }
+    if (dirBytes > 1024) {
+      strcpy(ext, "MB");
+      dirBytes /= 1024;
+    }
+    if (dirBytes > 1024) {
+      strcpy(ext, "GB");
+      dirBytes /= 1024;
+    }
 
-  printf("Size of directory: %ld%s\n", dirBytes, ext);
-  closedir(d);
+    printf("Size of directory: %ld%s\n", dirBytes, ext);
+    closedir(d);
 
-  d = opendir(path);
+    d = opendir(path);
   
-  struct dirent *entry = calloc(numfiles + numdirs, sizeof(struct dirent *));
-  entry = readdir(d);
-  char * arrdir[numdirs];
-  char * arrfile[numfiles];
-
-  int dirc = 0;
-  int filec = 0;
-  //print names of files + directories
-  while (entry != NULL){
-    if (entry->d_type == DT_DIR){
-	    arrdir[dirc] = entry->d_name;
-	    dirc++;
-    }
-    if (entry->d_type == DT_REG){
-      arrfile[filec] = entry->d_name;
-	    filec++;
-    }
+    struct dirent *entry = calloc(numfiles + numdirs, sizeof(struct dirent *));
     entry = readdir(d);
-  }
-  sort_strarr(arrdir, numdirs);
-  sort_strarr(arrfile, numfiles);
+    char * arrdir[numdirs];
+    char * arrfile[numfiles];
 
-  printf("Directories:\n");
-  while (dirc--){
-    printf("\t%s\n", arrdir[dirc]);
-  }
+    int dirc = 0;
+    int filec = 0;
+    //print names of files + directories
+    while (entry != NULL){
+      if (entry->d_type == DT_DIR){
+	arrdir[dirc] = entry->d_name;
+	dirc++;
+      }
+      if (entry->d_type == DT_REG){
+	arrfile[filec] = entry->d_name;
+	filec++;
+      }
+      entry = readdir(d);
+    }
+    sort_strarr(arrdir, numdirs);
+    sort_strarr(arrfile, numfiles);
 
-  char tmpPath[1024];
-  char tmpInf[512];
-  printf("\nFiles:\n");
-  while (filec--){
-    strcpy(tmpPath, path);
-    strcat(tmpPath, "/");
-    strcat(tmpPath, arrfile[filec]);
-    strcpy(tmpInf, getFileInfo(tmpPath));
-    printf("\t%s", tmpInf); 
-    printf("\t%s\n", arrfile[filec]);
-  }
-  printf("\nDir Tree:\n");
-  printTree(path, "");
+    printf("Directories:\n");
+    while (dirc--){
+      printf("\t%s\n", arrdir[dirc]);
+    }
 
-  closedir(d);
+    char tmpPath[1024];
+    char tmpInf[512];
+    printf("\nFiles:\n");
+    while (filec--){
+      strcpy(tmpPath, path);
+      strcat(tmpPath, "/");
+      strcat(tmpPath, arrfile[filec]);
+      strcpy(tmpInf, getFileInfo(tmpPath));
+      printf("\t%s", tmpInf); 
+      printf("\t%s\n", arrfile[filec]);
+    }
+    printf("\nDir Tree:\n");
+    printTree(path, "");
+
+    closedir(d);
+  }
 }
 
 
 
 int main(int argc, char * argv[]){
-  //get cwd is needed
-  if(argc > 1) {
-    for(int i = 1; i < argc; i++) {
-      dirinfo(argv[i]);
-    }
-  } else {
-    dirinfo(".");
-  }
+  printf("Provide a path: ");
+  scanf("%s",argv[0]);
+  dirinfo(argv[0]);
+  /* if(argc > 1) { */
+  /*   for(int i = 1; i < argc; i++) { */
+  /*     dirinfo(argv[i]); */
+  /*   } */
+  /* } */
+  /* else { */
+  /*   printf("not a legit path name, showing current directory\n"); */
+  /*   dirinfo("."); */
+  /* } */
   return 0;
 }
